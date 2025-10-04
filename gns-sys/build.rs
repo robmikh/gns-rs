@@ -277,7 +277,7 @@ fn main() {
 
     link("GameNetworkingSockets_s");
 
-    let gns_src_dir = if &target_os == "windows" && &target_env == "msvc" {
+    let gns_src_dir = if (&target_os == "windows" && &target_env == "msvc") || target_os == "macos" {
         println!("cargo::rerun-if-changed={}", gns_src_dir.join("vcpkg.json").display());
 
         // TODO: We can't make changes outside of OUT_DIR, but we need to clone/install vcpkg,
@@ -296,7 +296,7 @@ fn main() {
 
     let mut c = cmake::Config::new(&gns_src_dir);
 
-    if &target_os == "windows" && &target_env == "msvc" {
+    if (&target_os == "windows" && &target_env == "msvc") || target_os == "macos" {
         let vcpkg_target_triplet = vckpg_target_triplet(&target_os, &target_arch);
         let vcpkg_bootstrap_script = vckpg_bootstrap_script(&target_os);
 
@@ -393,7 +393,9 @@ fn main() {
             link_search("build/src/Debug");
         }
 
-        c.define("USE_CRYPTO", "BCrypt");
+        if target_os == "windows" {
+            c.define("USE_CRYPTO", "BCrypt");
+        }
         c.define("VCPKG_TARGET_TRIPLET", &vcpkg_target_triplet);
         c.define("VCPKG_BUILD_TYPE", profile.clone());
         c.define("VCPKG_INSTALLED_DIR", &vcpkg_installed_root);
