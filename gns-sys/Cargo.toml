@@ -45,3 +45,6 @@ dircpy = "0.3"
 pkg-config = "0.3"
 # This is a fork of upstream vcpkg that has the latest master changes actually published to crates.io
 vcpkg_rs_mf = "0.3"
+
+[target.'cfg(windows)'.build-dependencies]
+windows-registry = "0.6.0"

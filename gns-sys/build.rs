@@ -302,12 +302,14 @@ fn main() {
         println!("cargo::rerun-if-env-changed=GNS_VCPKG_BUILDTREES_ROOT");
         println!("cargo::rerun-if-env-changed=GNS_VCPKG_BUILDTREES_ROOT_NO_CHECK");
 
+        let long_paths_support = long_paths_support();
+
         let vcpkg_buildtrees_root = match std::env::var("GNS_VCPKG_BUILDTREES_ROOT") {
             Ok(v) => PathBuf::from(v),
             Err(_) => out_dir.join("vcpkg").join("buildtrees"),
         };
         let vcpkg_buildtrees_root_len = vcpkg_buildtrees_root.to_string_lossy().chars().count();
-        if std::env::var("GNS_VCPKG_BUILDTREES_ROOT_NO_CHECK").unwrap_or("".to_owned()) != "true"
+        if (std::env::var("GNS_VCPKG_BUILDTREES_ROOT_NO_CHECK").unwrap_or("".to_owned()) != "true" && !long_paths_support)
             && vcpkg_buildtrees_root_len > 100
         {
             panic!(
@@ -385,4 +387,22 @@ fn main() {
     c.define("OPENSSL_USE_STATIC_LIB", "ON");
     c.define("Protobuf_USE_STATIC_LIBS", "ON");
     c.build();
+}
+
+#[cfg(target_os = "windows")]
+fn long_paths_support() -> bool {
+    use windows_registry::*;
+
+    fn support_impl() -> Result<bool> {
+        let key = LOCAL_MACHINE.open("SYSTEM\\CurrentControlSet\\Control\\FileSystem")?;
+        let value = key.get_u32("LongPathsEnabled")?;
+        Ok(value == 1)
+    }
+
+    support_impl().unwrap_or(false)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn long_paths_support() -> bool {
+    false
 }
