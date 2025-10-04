@@ -223,7 +223,9 @@ fn git_clone(repo_url: &str, dst: &Path, commit: Option<&str>) {
 
 fn main() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
-    let target_env = std::env::var("CARGO_CFG_TARGET_ENV").unwrap();
+    let target_arch = std::env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let vcpkg_target_triplet = vckpg_target_triplet(&target_os, &target_arch);
+    let vcpkg_bootstrap_script = vckpg_bootstrap_script(&target_os);
 
     let manifest_dir = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
@@ -276,7 +278,7 @@ fn main() {
 
     link("GameNetworkingSockets_s");
 
-    let gns_src_dir = if &target_os == "windows" && &target_env == "msvc" {
+    let gns_src_dir = {
         println!("cargo::rerun-if-changed={}", gns_src_dir.join("vcpkg.json").display());
 
         // TODO: We can't make changes outside of OUT_DIR, but we need to clone/install vcpkg,
@@ -289,13 +291,11 @@ fn main() {
         }
         dircpy::copy_dir(&gns_src_dir, &new_dir).unwrap();
         new_dir
-    } else {
-        gns_src_dir
     };
 
     let mut c = cmake::Config::new(&gns_src_dir);
 
-    if &target_os == "windows" && &target_env == "msvc" {
+    {
         let vcpkg_root = gns_src_dir.join("vcpkg");
         let vcpkg_installed_root = out_dir.join("vcpkg").join("installed");
 
@@ -333,14 +333,14 @@ fn main() {
             &vcpkg_root,
             None,
         );
-        Command::new(vcpkg_root.join("bootstrap-vcpkg.bat"))
+        Command::new(vcpkg_root.join(&vcpkg_bootstrap_script))
             .status()
             .unwrap();
         let buildtrees_root_arg = format!("--x-buildtrees-root={}", vcpkg_buildtrees_root.display());
         assert_cmd(Command::new(vcpkg_root.join("vcpkg"))
             .arg("install")
             .arg(format!("--x-manifest-root={}", gns_src_dir.display()))
-            .arg("--triplet=x64-windows-static-md-release")
+            .arg(format!("--triplet={}", vcpkg_target_triplet))
             .arg(format!("--x-install-root={}", vcpkg_installed_root.display()))
             .arg(&buildtrees_root_arg));
 
@@ -349,7 +349,7 @@ fn main() {
             .vcpkg_installed_root(vcpkg_installed_root.clone())
             .cargo_metadata(false)
             .copy_dlls(false)
-            .target_triplet("x64-windows-static-md-release")
+            .target_triplet(&vcpkg_target_triplet)
             .find_package("protobuf")
             .unwrap();
 
@@ -370,14 +370,13 @@ fn main() {
             link_search("build/src/Debug");
         }
 
-        c.define("USE_CRYPTO", "BCrypt");
-        c.define("VCPKG_TARGET_TRIPLET", "x64-windows-static-md-release");
+        if target_os == "windows" {
+            c.define("USE_CRYPTO", "BCrypt");
+        }
+        c.define("VCPKG_TARGET_TRIPLET", &vcpkg_target_triplet);
         c.define("VCPKG_BUILD_TYPE", profile.clone());
         c.define("VCPKG_INSTALLED_DIR", &vcpkg_installed_root);
         c.define("VCPKG_INSTALL_OPTIONS", &buildtrees_root_arg);
-    } else {
-        link_protobuf();
-        link_openssl();
     }
     link_stdlib();
 
@@ -404,5 +403,35 @@ fn long_paths_support() -> bool {
 
 #[cfg(not(target_os = "windows"))]
 fn long_paths_support() -> bool {
-    false
+    true
+}
+
+fn vckpg_target_triplet(target_os: &str, target_arch: &str) -> String {
+    let vcpkg_arch = match target_arch {
+        "aarch64" => "arm64",
+        _ => panic!("Unknown arch: \"{}\"", target_arch),
+    };
+
+    let vcpkg_os = match target_os {
+        "macos" => "osx",
+        "windows" => "windows-static-md",
+        _ => panic!("Unknown OS: \"{}\"", target_os),
+    };
+
+    format!("{}-{}-release", vcpkg_arch, vcpkg_os)
+}
+
+fn vckpg_bootstrap_script(target_os: &str) -> &'static str {
+    let script = match target_os {
+        "windows" => "bootstrap-vcpkg.bat",
+        _ => {
+            let is_unix = std::env::var("CARGO_CFG_UNIX").is_ok();
+            if !is_unix {
+                panic!("Unknown OS: \"{}\"", target_os);
+            }
+            "bootstrap-vcpkg.sh"
+        },
+    };
+
+    script
 }
