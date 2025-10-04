@@ -10,161 +10,6 @@ fn link_search(build_subpath: impl AsRef<Path>) {
     println!("cargo:rustc-link-search={}", out_dir.join(build_subpath).display());
 }
 
-fn link_protobuf_default() {
-    link("static=utf8_range");
-    link("static=utf8_validity");
-    link("static=absl_failure_signal_handler");
-    link("static=absl_log_internal_fnmatch");
-    link("static=absl_raw_hash_set");
-    link("static=absl_bad_any_cast_impl");
-    link("static=absl_flags_commandlineflag");
-    link("static=absl_log_internal_format");
-    link("static=absl_raw_logging_internal");
-    link("static=absl_bad_optional_access");
-    link("static=absl_flags_commandlineflag_internal");
-    link("static=absl_log_internal_globals");
-    link("static=absl_bad_variant_access");
-    link("static=absl_flags_config");
-    link("static=absl_log_internal_log_sink_set");
-    link("static=absl_scoped_set_env");
-    link("static=absl_base");
-    link("static=absl_flags_internal");
-    link("static=absl_log_internal_message");
-    link("static=absl_spinlock_wait");
-    link("static=absl_city");
-    link("static=absl_flags_marshalling");
-    link("static=absl_log_internal_nullguard");
-    link("static=absl_stacktrace");
-    link("static=absl_civil_time");
-    link("static=absl_flags_parse");
-    link("static=absl_log_internal_proto");
-    link("static=absl_status");
-    link("static=absl_cord");
-    link("static=absl_flags_private_handle_accessor");
-    link("static=absl_log_severity");
-    link("static=absl_cord_internal");
-    link("static=absl_flags_program_name");
-    link("static=absl_log_sink");
-    link("static=absl_statusor");
-    link("static=absl_cordz_functions");
-    link("static=absl_flags_reflection");
-    link("static=absl_low_level_hash");
-    link("static=absl_strerror");
-    link("static=absl_cordz_handle");
-    link("static=absl_flags_usage");
-    link("static=absl_malloc_internal");
-    link("static=absl_str_format_internal");
-    link("static=absl_cordz_info");
-    link("static=absl_flags_usage_internal");
-    link("static=absl_periodic_sampler");
-    link("static=absl_strings");
-    link("static=absl_cordz_sample_token");
-    link("static=absl_graphcycles_internal");
-    link("static=absl_poison");
-    link("static=absl_strings_internal");
-    link("static=absl_crc32c");
-    link("static=absl_hash");
-    link("static=absl_random_distributions");
-    link("static=absl_string_view");
-    link("static=absl_crc_cord_state");
-    link("static=absl_hashtablez_sampler");
-    link("static=absl_random_internal_distribution_test_util");
-    link("static=absl_symbolize");
-    link("static=absl_crc_cpu_detect");
-    link("static=absl_int128");
-    link("static=absl_random_internal_platform");
-    link("static=absl_synchronization");
-    link("static=absl_crc_internal");
-    link("static=absl_kernel_timeout_internal");
-    link("static=absl_random_internal_pool_urbg");
-    link("static=absl_throw_delegate");
-    link("static=absl_debugging_internal");
-    link("static=absl_leak_check");
-    link("static=absl_random_internal_randen");
-    link("static=absl_time");
-    link("static=absl_decode_rust_punycode");
-    link("static=absl_log_entry");
-    link("static=absl_random_internal_randen_hwaes");
-    link("static=absl_time_zone");
-    link("static=absl_demangle_internal");
-    link("static=absl_log_flags");
-    link("static=absl_random_internal_randen_hwaes_impl");
-    link("static=absl_utf8_for_code_point");
-    link("static=absl_demangle_rust");
-    link("static=absl_log_globals");
-    link("static=absl_random_internal_randen_slow");
-    link("static=absl_vlog_config_internal");
-    link("static=absl_die_if_null");
-    link("static=absl_log_initialize");
-    link("static=absl_random_internal_seed_material");
-    link("static=absl_examine_stack");
-    link("static=absl_log_internal_check_op");
-    link("static=absl_random_seed_gen_exception");
-    link("static=absl_exponential_biased");
-    link("static=absl_log_internal_conditions");
-    link("static=absl_random_seed_sequences");
-    link("static=protobuf");
-}
-
-fn link_protobuf() {
-    let result = pkg_config::Config::new()
-        .statik(true)
-        .atleast_version("2.6.1")
-        .probe("protobuf");
-    match result {
-        Err(pkg_config::Error::EnvNoPkgConfig(_)) => {
-            println!(
-                "cargo::warning=pkg-config was not found in PATH, using default lib link flags\
-                 for protobuf"
-            );
-            link_protobuf_default();
-        },
-        Err(pkg_config::Error::ProbeFailure { name, command, output }) => {
-            println!(
-                "cargo::warning=library '{}' was not found by pkg-config; using default lib\
-                 link flags\n{}",
-                name.clone(),
-                pkg_config::Error::ProbeFailure { name, command, output },
-            );
-            link_protobuf_default();
-        },
-        Err(e) => Err(e).unwrap(),
-        Ok(_) => {},
-    };
-}
-
-fn link_openssl_default() {
-    link("static=crypto");
-    link("static=ssl");
-}
-
-fn link_openssl() {
-    let result = pkg_config::Config::new()
-        .statik(true)
-        .atleast_version("1.1.1")
-        .probe("openssl");
-    match result {
-        Err(pkg_config::Error::EnvNoPkgConfig(_)) => {
-            println!(
-                "cargo::warning=pkg-config was not found in PATH, using default lib link flags\
-                 for openssl"
-            );
-            link_openssl_default();
-        },
-        Err(pkg_config::Error::ProbeFailure { name, command, output }) => {
-            println!(
-                "cargo::warning=library '{}' was not found by pkg-config; using default lib\
-                 link flags\n{}",
-                name.clone(),
-                pkg_config::Error::ProbeFailure { name, command, output },
-            );
-            link_openssl_default();
-        },
-        Err(e) => Err(e).unwrap(),
-        Ok(_) => {},
-    }
-}
-
 // Copied from 'cc'; https://docs.rs/cc/latest/src/cc/lib.rs.html#3073
 fn link_stdlib() {
     let target_os = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
@@ -353,7 +198,26 @@ fn main() {
             .find_package("protobuf")
             .unwrap();
 
+        let openssl = vcpkg_rs_mf::Config::new()
+            .vcpkg_root(vcpkg_root.clone())
+            .vcpkg_installed_root(vcpkg_installed_root.clone())
+            .cargo_metadata(false)
+            .copy_dlls(false)
+            .target_triplet(&vcpkg_target_triplet)
+            .find_package("openssl")
+            .unwrap();
+
         for line in protobuf.cargo_metadata {
+            // vcpkg crate doesn't have any method to specify the link metadata as static, so
+            // manually do that here
+            let line = line.replace(
+                "cargo:rustc-link-lib=",
+                "cargo:rustc-link-lib=static=",
+            );
+            println!("{}", line);
+        }
+
+        for line in openssl.cargo_metadata {
             // vcpkg crate doesn't have any method to specify the link metadata as static, so
             // manually do that here
             let line = line.replace(
@@ -416,6 +280,7 @@ fn vckpg_target_triplet(target_os: &str, target_arch: &str) -> String {
     let vcpkg_os = match target_os {
         "macos" => "osx",
         "windows" => "windows-static-md",
+        "linux" => "linux",
         _ => panic!("Unknown OS: \"{}\"", target_os),
     };
 
