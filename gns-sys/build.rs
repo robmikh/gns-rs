@@ -409,6 +409,7 @@ fn long_paths_support() -> bool {
 fn vckpg_target_triplet(target_os: &str, target_arch: &str) -> String {
     let vcpkg_arch = match target_arch {
         "aarch64" => "arm64",
+        "x86_64" => "x64",
         _ => panic!("Unknown arch: \"{}\"", target_arch),
     };
 
