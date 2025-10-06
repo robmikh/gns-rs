@@ -333,9 +333,9 @@ fn main() {
         }
 
         git_clone(
-            "https://github.com/microsoft/vcpkg",
+            "https://github.com/robmikh/vcpkg",
             &vcpkg_root,
-            None,
+            Some("ecf0c3f25b44955b639a4658fe23efc00e6d34f7"),
         );
         Command::new(vcpkg_root.join(&vcpkg_bootstrap_script))
             .status()
