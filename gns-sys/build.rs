@@ -416,15 +416,7 @@ fn main() {
 
 #[cfg(target_os = "windows")]
 fn long_paths_support() -> bool {
-    use windows_registry::*;
-
-    fn support_impl() -> Result<bool> {
-        let key = LOCAL_MACHINE.open("SYSTEM\\CurrentControlSet\\Control\\FileSystem")?;
-        let value = key.get_u32("LongPathsEnabled")?;
-        Ok(value == 1)
-    }
-
-    support_impl().unwrap_or(false)
+    false
 }
 
 #[cfg(not(target_os = "windows"))]
